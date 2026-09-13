@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [[ "$remote_ref" == "refs/heads/main" ]]; then
+    printf 'Direct pushes to main are disabled. Use a pull request.\n' >&2
+    exit 1
+  fi
+done
