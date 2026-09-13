@@ -10,15 +10,24 @@ ExecStart=%h/.local/bin/yellow-silence run --config %h/.config/yellow-silence/co
 Restart=on-failure
 RestartSec=3s
 NoNewPrivileges=true
+CapabilityBoundingSet=
+UMask=0077
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=read-only
+ProtectClock=true
+ProtectHostname=true
+ProtectKernelLogs=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX
+IPAddressDeny=any
 RestrictSUIDSGID=true
 LockPersonality=true
 MemoryDenyWriteExecute=true
+RemoveIPC=true
+SystemCallArchitectures=native
 
 [Install]
 WantedBy=graphical-session.target

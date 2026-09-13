@@ -28,3 +28,30 @@ func TestRejectsUnknownField(t *testing.T) {
 		t.Fatal("expected error")
 	}
 }
+
+func TestLoadRejectsUnsafeFilesAndContent(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+		mode    os.FileMode
+	}{
+		{name: "trailing JSON", content: `{}` + "\n{}", mode: 0600},
+		{name: "group writable", content: `{}`, mode: 0620},
+		{name: "relative capture command", content: `{"capture_command":["helper"]}`, mode: 0600},
+		{name: "excessive color tolerance", content: `{"color_tolerance":65}`, mode: 0600},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "config.json")
+			if err := os.WriteFile(path, []byte(tc.content), tc.mode); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Chmod(path, tc.mode); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Load(path); err == nil {
+				t.Fatal("expected unsafe configuration to be rejected")
+			}
+		})
+	}
+}

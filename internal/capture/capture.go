@@ -7,40 +7,87 @@ import (
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
+	"io"
 	"os/exec"
+	"path/filepath"
+	"time"
+)
+
+const (
+	maxCaptureBytes  = 64 << 20
+	maxCapturePixels = 100_000_000
+	captureTimeout   = 5 * time.Second
 )
 
 type Capturer struct{ command []string }
 
 func New(custom []string) (*Capturer, error) {
 	if len(custom) > 0 {
-		if _, err := exec.LookPath(custom[0]); err != nil {
+		if !filepath.IsAbs(custom[0]) {
+			return nil, fmt.Errorf("custom capture command must use an absolute executable path")
+		}
+		path, err := exec.LookPath(custom[0])
+		if err != nil {
 			return nil, fmt.Errorf("capture command: %w", err)
 		}
-		return &Capturer{custom}, nil
+		command := append([]string{path}, custom[1:]...)
+		return &Capturer{command}, nil
 	}
 	candidates := [][]string{{"grim", "-"}, {"maim"}, {"scrot", "-"}}
 	for _, c := range candidates {
-		if _, err := exec.LookPath(c[0]); err == nil {
-			return &Capturer{c}, nil
+		if path, err := exec.LookPath(c[0]); err == nil {
+			command := append([]string{path}, c[1:]...)
+			return &Capturer{command}, nil
 		}
 	}
 	return nil, fmt.Errorf("no screenshot tool found; install grim (Wayland), maim, or scrot (X11)")
 }
 
 func (c *Capturer) Capture(ctx context.Context) (image.Image, error) {
-	cmd := exec.CommandContext(ctx, c.command[0], c.command[1:]...)
-	var out, stderr bytes.Buffer
+	commandCtx, cancel := context.WithTimeout(ctx, captureTimeout)
+	defer cancel()
+	cmd := exec.CommandContext(commandCtx, c.command[0], c.command[1:]...)
+	var out limitedBuffer
+	out.remaining = maxCaptureBytes
 	cmd.Stdout = &out
-	cmd.Stderr = &stderr
+	cmd.Stderr = io.Discard
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("%s failed: %w: %s", c.command[0], err, stderr.String())
+		if commandCtx.Err() != nil {
+			return nil, fmt.Errorf("capture command timed out or was canceled: %w", commandCtx.Err())
+		}
+		return nil, fmt.Errorf("capture command failed: %w", err)
 	}
-	img, _, err := image.Decode(bytes.NewReader(out.Bytes()))
+	encoded := out.Bytes()
+	metadata, _, err := image.DecodeConfig(bytes.NewReader(encoded))
+	if err != nil {
+		return nil, fmt.Errorf("decode screenshot metadata: %w", err)
+	}
+	if !safeDimensions(metadata.Width, metadata.Height) {
+		return nil, fmt.Errorf("screenshot dimensions exceed safety limit")
+	}
+	img, _, err := image.Decode(bytes.NewReader(encoded))
 	if err != nil {
 		return nil, fmt.Errorf("decode screenshot: %w", err)
 	}
 	return img, nil
 }
 
+func safeDimensions(width, height int) bool {
+	return width > 0 && height > 0 && uint64(width)*uint64(height) <= maxCapturePixels
+}
+
 func (c *Capturer) Name() string { return c.command[0] }
+
+type limitedBuffer struct {
+	bytes.Buffer
+	remaining int
+}
+
+func (b *limitedBuffer) Write(p []byte) (int, error) {
+	if len(p) > b.remaining {
+		return 0, fmt.Errorf("capture output exceeds %d bytes", maxCaptureBytes)
+	}
+	n, err := b.Buffer.Write(p)
+	b.remaining -= n
+	return n, err
+}

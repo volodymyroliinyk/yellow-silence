@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 )
+
+const maxConfigBytes = 1 << 20
 
 type RGB struct{ R, G, B uint8 }
 
@@ -80,14 +83,38 @@ func DefaultPath() string {
 
 func Load(path string) (Config, error) {
 	cfg := Defaults()
-	b, err := os.ReadFile(path)
+	file, err := os.Open(path)
+	if err != nil {
+		return cfg, fmt.Errorf("open config: %w", err)
+	}
+	defer file.Close()
+	info, err := file.Stat()
+	if err != nil {
+		return cfg, fmt.Errorf("inspect config: %w", err)
+	}
+	if !info.Mode().IsRegular() {
+		return cfg, errors.New("config must be a regular file")
+	}
+	if info.Size() > maxConfigBytes {
+		return cfg, errors.New("config exceeds 1 MiB safety limit")
+	}
+	if info.Mode().Perm()&0022 != 0 {
+		return cfg, errors.New("config must not be writable by group or other users")
+	}
+	b, err := io.ReadAll(io.LimitReader(file, maxConfigBytes+1))
 	if err != nil {
 		return cfg, fmt.Errorf("read config: %w", err)
+	}
+	if len(b) > maxConfigBytes {
+		return cfg, errors.New("config exceeds 1 MiB safety limit")
 	}
 	dec := json.NewDecoder(strings.NewReader(string(b)))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&cfg); err != nil {
 		return cfg, fmt.Errorf("parse config: %w", err)
+	}
+	if err := dec.Decode(&struct{}{}); err != io.EOF {
+		return cfg, errors.New("config must contain exactly one JSON object")
 	}
 	if err := cfg.Validate(); err != nil {
 		return cfg, err
@@ -96,13 +123,16 @@ func Load(path string) (Config, error) {
 }
 
 func (c Config) Validate() error {
-	if len(c.Browsers) == 0 {
-		return errors.New("browsers must not be empty")
+	if len(c.Browsers) == 0 || len(c.Browsers) > 64 {
+		return errors.New("browsers must contain between 1 and 64 entries")
 	}
 	for _, b := range c.Browsers {
-		if strings.TrimSpace(b) == "" || strings.ContainsAny(b, "\x00\n") {
+		if strings.TrimSpace(b) == "" || len(b) > 4096 || strings.ContainsAny(b, "\x00\r\n") {
 			return errors.New("browser entries must be non-empty process names or executable paths")
 		}
+	}
+	if c.ColorTolerance > 64 {
+		return errors.New("color_tolerance must not exceed 64")
 	}
 	if c.MinimumLengthPX < 1 || c.MinimumThicknessPX < 1 {
 		return errors.New("minimum dimensions must be positive")
@@ -119,8 +149,18 @@ func (c Config) Validate() error {
 	if c.LogLevel != "debug" && c.LogLevel != "info" && c.LogLevel != "warn" && c.LogLevel != "error" {
 		return errors.New("invalid log_level")
 	}
-	if len(c.CaptureCommand) > 0 && strings.TrimSpace(c.CaptureCommand[0]) == "" {
-		return errors.New("capture_command executable cannot be empty")
+	if len(c.CaptureCommand) > 64 {
+		return errors.New("capture_command must not contain more than 64 arguments")
+	}
+	if len(c.CaptureCommand) > 0 {
+		if !filepath.IsAbs(c.CaptureCommand[0]) {
+			return errors.New("capture_command executable must be an absolute path")
+		}
+		for _, arg := range c.CaptureCommand {
+			if len(arg) > 4096 || strings.ContainsRune(arg, '\x00') {
+				return errors.New("capture_command arguments must not exceed 4096 bytes or contain NUL")
+			}
+		}
 	}
 	return nil
 }

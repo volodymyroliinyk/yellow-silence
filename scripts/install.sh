@@ -12,6 +12,7 @@ install -m 0644 "$project_dir/packaging/yellow-silence.service" "$unit_dir/yello
 if [[ ! -e "$config_dir/config.json" ]]; then
   install -m 0600 "$project_dir/config/config.example.json" "$config_dir/config.json"
 fi
+chmod 0600 "$config_dir/config.json"
 systemctl --user daemon-reload
 systemctl --user enable --now yellow-silence.service
 printf 'Installed and started yellow-silence. Edit %s/config.json if needed.\n' "$config_dir"

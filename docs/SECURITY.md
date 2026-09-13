@@ -10,6 +10,10 @@ Please report vulnerabilities privately to the repository owner rather than open
 
 ## Security model
 
-Yellow Silence runs as the logged-in user, requires no root privileges, does not use the network, and keeps screenshots only in process memory. The systemd unit enables filesystem, privilege, kernel, and executable-memory restrictions. External capture/audio programs inherit the same service sandbox.
+Yellow Silence runs as the logged-in user and requires no root privileges. Screenshots remain in process memory and are subject to encoded-size and pixel-count limits. Capture and audio commands have execution deadlines. Their stderr and device details are discarded rather than included in logs.
 
-Configured commands are executed directly without a shell. Configuration should be writable only by its owner (`0600` is used at creation). A malicious screenshot utility or modified executable in `PATH` has the same user-level access as this service, so use distribution-provided packages and a trusted service-manager environment.
+The systemd unit denies IP networking and capabilities and enables filesystem, privilege, kernel, hostname, clock, IPC, and executable-memory restrictions. Unix sockets remain available because Wayland/X11, PipeWire, PulseAudio, and D-Bus use them. External capture/audio programs inherit the same service sandbox.
+
+Configured commands are executed directly without a shell. A custom capture executable must use an absolute path. Configuration is limited to 1 MiB, must be a regular file, and is rejected when group- or world-writable (`0600` is used at creation). A malicious screenshot utility has the same user-level screen access as this service, so use distribution-provided executables and review custom commands before enabling them.
+
+Screen capture is inherently privacy-sensitive. The service scans pixels only for the configured color pattern; it does not save screenshots, send network requests, perform OCR, or log image contents. The operating system and selected screenshot utility remain part of the trusted computing base.

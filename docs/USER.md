@@ -38,20 +38,22 @@ The default path is `$XDG_CONFIG_HOME/yellow-silence/config.json` or `~/.config/
 | --- | --- | --- |
 | `browsers` | Process names or executable paths. Matching uses the executable basename. | Common browsers |
 | `color` | Target color in `#RRGGBB`. The default matches the supplied yellow video progress bar. | `#FFCC00` |
-| `color_tolerance` | Maximum difference in each RGB channel, 0–255. | `24` |
+| `color_tolerance` | Maximum difference in each RGB channel, 0–64. | `24` |
 | `minimum_length_px` | Minimum horizontal length. | `100` |
 | `minimum_thickness_px` | Minimum consecutive rows. | `2` |
 | `poll_interval` | Delay between consecutive screen checks while a browser is running. Go duration, at least `100ms`. | `200ms` |
 | `restore_within` | Maximum time during which automatic unmute is allowed. | `5m` |
 | `audio_backend` | `auto`, `wpctl`, or `pactl`. | `auto` |
 | `log_level` | `debug`, `info`, `warn`, or `error`. | `info` |
-| `capture_command` | Optional command/arguments that write a PNG or JPEG to stdout. | auto-detect |
+| `capture_command` | Optional absolute executable path and arguments that write a PNG or JPEG to stdout. | auto-detect |
 
 Validate after editing:
 
 ```bash
 yellow-silence check
 ```
+
+The service rejects a configuration that other users can modify. If validation reports unsafe permissions, run `chmod 0600 ~/.config/yellow-silence/config.json`.
 
 For diagnosis, set `log_level` to `debug`, restart the service, and read:
 
@@ -62,7 +64,7 @@ systemctl --user status yellow-silence
 
 ## Wayland notes
 
-Wayland compositors intentionally restrict screen capture. `grim` works directly on wlroots-based compositors. GNOME may display a capture permission prompt or reject unattended capture. If your desktop offers a trusted screenshot command, set `capture_command`; it must emit PNG/JPEG bytes on standard output. Do not place secrets in this array because command names are logged by operating-system process tools.
+Wayland compositors intentionally restrict screen capture. `grim` works directly on wlroots-based compositors. GNOME may display a capture permission prompt or reject unattended capture. If your desktop offers a trusted screenshot command, set `capture_command`; its first element must be an absolute path and it must emit PNG/JPEG bytes on standard output. Do not place secrets in this array because command arguments can be visible to operating-system process tools.
 
 If a manually launched command works but the service does not, import the graphical environment and restart:
 
