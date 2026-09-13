@@ -61,7 +61,10 @@ func (a *App) tick(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	m, found := detect.FindHorizontalBar(img, a.cfg.Color, a.cfg.ColorTolerance, a.cfg.MinimumLengthPX, a.cfg.MinimumThicknessPX)
+	m, found := func() (detect.Match, bool) {
+		defer capture.Release(img)
+		return detect.FindHorizontalBar(img, a.cfg.Color, a.cfg.ColorTolerance, a.cfg.MinimumLengthPX, a.cfg.MinimumThicknessPX)
+	}()
 	if found {
 		a.log.Debug("target bar detected", "x", m.X, "y", m.Y, "length", m.Length, "thickness", m.Thickness)
 		if !a.mutedByUs {

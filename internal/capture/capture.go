@@ -58,6 +58,7 @@ func (c *Capturer) Capture(ctx context.Context) (image.Image, error) {
 		return nil, fmt.Errorf("capture command failed: %w", err)
 	}
 	encoded := out.Bytes()
+	defer clear(encoded)
 	metadata, _, err := image.DecodeConfig(bytes.NewReader(encoded))
 	if err != nil {
 		return nil, fmt.Errorf("decode screenshot metadata: %w", err)
@@ -74,6 +75,38 @@ func (c *Capturer) Capture(ctx context.Context) (image.Image, error) {
 
 func safeDimensions(width, height int) bool {
 	return width > 0 && height > 0 && uint64(width)*uint64(height) <= maxCapturePixels
+}
+
+// Release clears pixel storage owned by decoded image types used by the
+// standard PNG and JPEG decoders. Call it as soon as detection is complete.
+func Release(img image.Image) {
+	switch pixels := img.(type) {
+	case *image.RGBA:
+		clear(pixels.Pix)
+	case *image.RGBA64:
+		clear(pixels.Pix)
+	case *image.NRGBA:
+		clear(pixels.Pix)
+	case *image.NRGBA64:
+		clear(pixels.Pix)
+	case *image.Alpha:
+		clear(pixels.Pix)
+	case *image.Alpha16:
+		clear(pixels.Pix)
+	case *image.Gray:
+		clear(pixels.Pix)
+	case *image.Gray16:
+		clear(pixels.Pix)
+	case *image.CMYK:
+		clear(pixels.Pix)
+	case *image.Paletted:
+		clear(pixels.Pix)
+		clear(pixels.Palette)
+	case *image.YCbCr:
+		clear(pixels.Y)
+		clear(pixels.Cb)
+		clear(pixels.Cr)
+	}
 }
 
 func (c *Capturer) Name() string { return c.command[0] }

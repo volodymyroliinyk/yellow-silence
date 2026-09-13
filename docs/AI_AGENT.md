@@ -11,6 +11,7 @@ This file is the operational context for automated coding agents working on Yell
 5. Keep the app headless and keep the CLI usable without systemd.
 6. Configuration parsing must reject unknown fields and unsafe/invalid values.
 7. Do not commit or push directly to `main`; use a pull request from `develop`, a topic branch, or a release branch.
+8. Clear encoded screenshot bytes after decoding and decoded pixel buffers immediately after each detection cycle. Never retain an `image.Image` between cycles.
 
 ## Change workflow
 
