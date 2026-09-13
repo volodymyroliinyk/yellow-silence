@@ -1,0 +1,11 @@
+Package: yellow-silence
+Version: @VERSION@
+Section: utils
+Priority: optional
+Architecture: @ARCH@
+Maintainer: Yellow Silence contributors <yellow-silence@users.noreply.github.com>
+Depends: wireplumber | pulseaudio-utils, grim | maim | scrot
+Homepage: https://github.com/volodymyr/yellow-silence
+Description: Mute audio while a configured yellow screen bar is visible
+ Yellow Silence monitors the desktop while a configured browser is running.
+ It controls the default audio sink through PipeWire or PulseAudio.

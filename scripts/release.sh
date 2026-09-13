@@ -4,7 +4,7 @@ project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$project_dir"
 
 version="${1:-}"
-if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   printf 'Usage: %s VERSION (for example: 1.2.3)\n' "$0" >&2
   exit 2
 fi
@@ -57,7 +57,9 @@ gh pr checks "$pr_url" --watch
 gh pr merge "$pr_url" --merge --delete-branch
 git switch main
 git pull --ff-only origin main
+release_dir="$project_dir/dist/release/$tag"
+"$project_dir/scripts/build-release.sh" "$version"
 git tag -a "$tag" -m "Release $tag"
 git push origin "$tag"
-gh release create "$tag" --title "$tag" --notes-file "$notes" --verify-tag
+gh release create "$tag" "$release_dir"/* --title "$tag" --notes-file "$notes" --verify-tag
 printf 'Created GitHub release %s.\n' "$tag"

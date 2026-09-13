@@ -20,4 +20,6 @@ jobs:
           cache: false
       - run: ./scripts/test.sh
       - run: ./scripts/build.sh
+      - run: ./scripts/build-deb.sh 0.0.0~ci
+      - run: dpkg-deb --info dist/yellow-silence_0.0.0~ci_amd64.deb
       - run: git diff --check

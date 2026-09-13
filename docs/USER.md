@@ -30,6 +30,24 @@ systemctl --user daemon-reload
 
 The command deliberately leaves your configuration in place.
 
+### Debian package
+
+Build and install a local package with:
+
+```bash
+./scripts/install-deb.sh 0.1.0
+```
+
+The package uses the Debian filename format `yellow-silence_<version>_<architecture>.deb` and installs the binary at `/usr/bin/yellow-silence` plus the user-service unit at `/usr/lib/systemd/user/yellow-silence.service`. The script creates the per-user configuration and starts the service after `apt` installs the package.
+
+To update from the latest GitHub Release:
+
+```bash
+./scripts/update-deb.sh
+```
+
+The updater requires GitHub CLI authentication and `sudo` access for `apt`. It downloads the package matching the current Debian architecture, verifies it against the release `SHA256SUMS`, installs it through `apt`, and restarts the user service. Set `YELLOW_SILENCE_REPOSITORY=owner/repository` when using a fork.
+
 ## Configuration reference
 
 The default path is `$XDG_CONFIG_HOME/yellow-silence/config.json` or `~/.config/yellow-silence/config.json`.

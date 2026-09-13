@@ -10,7 +10,8 @@
 - `internal/audio`: `wpctl`/`pactl` adapters.
 - `internal/app`: monitoring state machine and mute ownership.
 - `packaging`: systemd user unit.
-- `scripts`: test, build, install, and update workflows.
+- `packaging/debian`: Debian control template and package-specific systemd user unit.
+- `scripts`: test, binary, Debian package, install, update, and release workflows.
 
 ## Development
 
@@ -18,6 +19,8 @@
 ./scripts/test.sh
 ./scripts/build.sh
 ./dist/yellow-silence check --config config/config.example.json
+./scripts/build-deb.sh 0.1.0
+./scripts/build-release.sh 0.1.0
 ```
 
 Run interactively before enabling systemd:
@@ -75,6 +78,13 @@ The release script:
 2. Builds release notes from commit subjects since the previous tag.
 3. Creates `release/v1.2.3` and updates `CHANGELOG.md`.
 4. Opens a pull request, waits for checks, and merges it into `main` through GitHub.
-5. Updates local `main`, creates and pushes an annotated tag, and creates the GitHub Release.
+5. Updates local `main` and builds the release artifacts.
+6. Creates and pushes an annotated tag, then creates the GitHub Release with the artifacts.
+
+Release asset names are deterministic:
+
+- `yellow-silence_<version>_linux_<goarch>` for the standalone Go binary;
+- `yellow-silence_<version>_<debian-architecture>.deb` for the Debian package;
+- `SHA256SUMS` for integrity verification.
 
 Use concise commit subjects because they become changelog entries. Conventional Commit prefixes such as `feat:`, `fix:`, `docs:`, and `chore:` are recommended.

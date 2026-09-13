@@ -12,6 +12,7 @@ The service never unmutes audio that was already muted before detection.
 - Ubuntu or another Linux distribution with systemd user services.
 - PipeWire/WirePlumber (`wpctl`) or PulseAudio (`pactl`).
 - A screenshot tool: `grim` on Wayland, or `maim`/`scrot` on X11.
+- `dpkg-deb` and `gzip` when building a Debian package.
 
 Ubuntu X11 example:
 
@@ -33,6 +34,12 @@ Desktop security policies may require permission for screen capture. See [User g
 ./scripts/test.sh
 ./scripts/install.sh
 journalctl --user -u yellow-silence -f
+```
+
+To build and install a Debian package instead:
+
+```bash
+./scripts/install-deb.sh 0.1.0
 ```
 
 Edit `~/.config/yellow-silence/config.json`, then reload with:
