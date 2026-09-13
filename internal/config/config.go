@@ -62,7 +62,7 @@ func Defaults() Config {
 	return Config{
 		Browsers: []string{"firefox", "google-chrome", "chromium", "brave-browser"},
 		Color:    RGB{255, 204, 0}, ColorTolerance: 24, MinimumLengthPX: 100, MinimumThicknessPX: 2,
-		PollInterval: Duration{500 * time.Millisecond}, RestoreWithin: Duration{5 * time.Minute},
+		PollInterval: Duration{200 * time.Millisecond}, RestoreWithin: Duration{5 * time.Minute},
 		AudioBackend: "auto", LogLevel: "info",
 	}
 }

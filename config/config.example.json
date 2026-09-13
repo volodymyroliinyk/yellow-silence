@@ -9,7 +9,7 @@
   "color_tolerance": 24,
   "minimum_length_px": 100,
   "minimum_thickness_px": 2,
-  "poll_interval": "500ms",
+  "poll_interval": "200ms",
   "restore_within": "5m",
   "audio_backend": "auto",
   "log_level": "info"

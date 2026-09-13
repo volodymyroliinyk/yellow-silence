@@ -2,7 +2,7 @@
 
 `yellow-silence` is a headless Ubuntu/Linux service that watches the screen while a configured browser is running. It mutes the default audio output when a horizontal bar of the configured color is present and restores audio after the bar disappears, provided the configured restore window has not expired.
 
-The default detector profile targets the `#FFCC00`, 3-pixel yellow video progress bar shown in the supplied reference screenshots; partial bars are detected as soon as they are at least 100 pixels long.
+The default detector profile targets the `#FFCC00`, 3-pixel yellow video progress bar shown in the supplied reference screenshots. While a configured browser is running, the current screen is checked every 200 ms by default. A changing partial bar is detected whenever its current length is at least 100 pixels.
 
 The service never unmutes audio that was already muted before detection.
 

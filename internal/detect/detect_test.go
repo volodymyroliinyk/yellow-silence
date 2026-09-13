@@ -47,6 +47,23 @@ func TestFindVideoProgressBarExamples(t *testing.T) {
 		})
 	}
 }
+
+func TestChangingProgressBarIsMeasuredFromEachFrame(t *testing.T) {
+	lengths := []int{40, 99, 100, 640, 1340, 80, 0}
+	want := []bool{false, false, true, true, true, false, false}
+	for i, length := range lengths {
+		img := image.NewRGBA(image.Rect(0, 0, 1374, 32))
+		for y := 12; y < 15; y++ {
+			for x := 10; x < 10+length; x++ {
+				img.Set(x, y, color.RGBA{255, 204, 0, 255})
+			}
+		}
+		_, found := FindHorizontalBar(img, config.RGB{R: 255, G: 204, B: 0}, 24, 100, 2)
+		if found != want[i] {
+			t.Fatalf("frame %d with length %d: found=%v, want %v", i, length, found, want[i])
+		}
+	}
+}
 func TestRejectsShortAndWrongColor(t *testing.T) {
 	img := image.NewRGBA(image.Rect(0, 0, 200, 20))
 	for x := 0; x < 99; x++ {

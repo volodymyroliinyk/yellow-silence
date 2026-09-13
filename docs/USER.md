@@ -2,7 +2,7 @@
 
 ## How it works
 
-The program polls only while at least one configured browser process is running. It captures the whole desktop and looks for a horizontal rectangle whose pixels are within `color_tolerance` of `color`. When a matching run reaches `minimum_length_px` for at least `minimum_thickness_px` rows, the default output device is muted.
+The program polls continuously while at least one configured browser process is running. On every cycle it captures the current desktop and measures the bar again, so a growing or shrinking progress bar does not rely on a previous measurement. When a matching run reaches `minimum_length_px` for at least `minimum_thickness_px` rows, the default output device is muted.
 
 Audio is restored only when all of these are true:
 
@@ -41,7 +41,7 @@ The default path is `$XDG_CONFIG_HOME/yellow-silence/config.json` or `~/.config/
 | `color_tolerance` | Maximum difference in each RGB channel, 0–255. | `24` |
 | `minimum_length_px` | Minimum horizontal length. | `100` |
 | `minimum_thickness_px` | Minimum consecutive rows. | `2` |
-| `poll_interval` | Go duration, at least `100ms`. | `500ms` |
+| `poll_interval` | Delay between consecutive screen checks while a browser is running. Go duration, at least `100ms`. | `200ms` |
 | `restore_within` | Maximum time during which automatic unmute is allowed. | `5m` |
 | `audio_backend` | `auto`, `wpctl`, or `pactl`. | `auto` |
 | `log_level` | `debug`, `info`, `warn`, or `error`. | `info` |
