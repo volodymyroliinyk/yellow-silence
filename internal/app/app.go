@@ -6,11 +6,11 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/volodymyr/yellow-silence/internal/audio"
-	"github.com/volodymyr/yellow-silence/internal/capture"
-	"github.com/volodymyr/yellow-silence/internal/config"
-	"github.com/volodymyr/yellow-silence/internal/detect"
-	proc "github.com/volodymyr/yellow-silence/internal/process"
+	"github.com/volodymyroliinyk/yellow-silence/internal/audio"
+	"github.com/volodymyroliinyk/yellow-silence/internal/capture"
+	"github.com/volodymyroliinyk/yellow-silence/internal/config"
+	"github.com/volodymyroliinyk/yellow-silence/internal/detect"
+	proc "github.com/volodymyroliinyk/yellow-silence/internal/process"
 )
 
 type App struct {
@@ -30,6 +30,7 @@ func (a *App) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	defer a.capture.Close()
 	a.audio, err = audio.New(a.cfg.AudioBackend)
 	if err != nil {
 		return err

@@ -4,6 +4,8 @@ import (
 	"image"
 	"image/color"
 	"testing"
+
+	"github.com/godbus/dbus/v5"
 )
 
 func TestLimitedBufferRejectsOversizedOutput(t *testing.T) {
@@ -13,6 +15,53 @@ func TestLimitedBufferRejectsOversizedOutput(t *testing.T) {
 	}
 	if buffer.Len() != 0 {
 		t.Fatalf("buffer contains %d bytes after rejected write", buffer.Len())
+	}
+}
+
+func TestFirstStream(t *testing.T) {
+	results := map[string]dbus.Variant{
+		"streams": dbus.MakeVariant([][]any{{uint32(42), map[string]dbus.Variant{
+			"size": dbus.MakeVariant([]int32{2736, 1824}),
+		}}}),
+	}
+	stream, err := firstStream(results)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stream.nodeID != 42 || stream.width != 2736 || stream.height != 1824 {
+		t.Fatalf("stream=%+v", stream)
+	}
+}
+
+func TestInt32PairRejectsInvalidValues(t *testing.T) {
+	tests := []any{nil, []int32{1}, []int32{1, 2, 3}, []any{int32(1), "2"}}
+	for _, value := range tests {
+		if _, _, ok := int32Pair(value); ok {
+			t.Fatalf("accepted invalid pair %#v", value)
+		}
+	}
+}
+
+func TestWaylandEnvironmentDetection(t *testing.T) {
+	tests := []struct {
+		name           string
+		sessionType    string
+		waylandDisplay string
+		want           bool
+	}{
+		{name: "Wayland session", sessionType: "wayland", want: true},
+		{name: "Wayland display fallback", waylandDisplay: "wayland-0", want: true},
+		{name: "explicit X11", sessionType: "x11", waylandDisplay: "wayland-0", want: false},
+		{name: "no graphical environment", want: false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("XDG_SESSION_TYPE", tc.sessionType)
+			t.Setenv("WAYLAND_DISPLAY", tc.waylandDisplay)
+			if got := isWaylandEnvironment(); got != tc.want {
+				t.Fatalf("isWaylandEnvironment()=%v, want %v", got, tc.want)
+			}
+		})
 	}
 }
 

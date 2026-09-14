@@ -29,7 +29,17 @@ Run interactively before enabling systemd:
 ./dist/yellow-silence run --config config/config.example.json
 ```
 
-The project intentionally uses only the Go standard library. Keep OS integrations behind narrow package APIs. Commands must use `exec.CommandContext` with separate argument arrays; never invoke a shell with values from configuration. Preserve output-size, image-dimension, and execution-time limits. Never add child-process output to logs or returned errors. Every successful `Capture` call must pair pixel inspection with `defer capture.Release(img)` inside a narrow function scope so the decoded buffer is cleared before audio handling and all return paths remain covered.
+The project uses the Go standard library except for `github.com/godbus/dbus/v5`,
+which provides authenticated session-bus transport and Unix file-descriptor
+passing for the XDG ScreenCast Portal. This narrow dependency avoids executing
+D-Bus commands through a shell and lets the portal provide a capability-limited
+PipeWire descriptor. Keep OS integrations behind narrow package APIs. Commands
+must use `exec.CommandContext` with separate argument arrays; never invoke a
+shell with values from configuration. Preserve output-size, image-dimension,
+and execution-time limits. Never add child-process output to logs or returned
+errors. Every successful `Capture` call must pair pixel inspection with
+`defer capture.Release(img)` inside a narrow function scope so the decoded
+buffer is cleared before audio handling and all return paths remain covered.
 
 ## Git workflow
 

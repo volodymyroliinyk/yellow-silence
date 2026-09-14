@@ -82,12 +82,26 @@ systemctl --user status yellow-silence
 
 ## Wayland notes
 
-Wayland compositors intentionally restrict screen capture. `grim` works directly on wlroots-based compositors. GNOME may display a capture permission prompt or reject unattended capture. If your desktop offers a trusted screenshot command, set `capture_command`; its first element must be an absolute path and it must emit PNG/JPEG bytes on standard output. Do not place secrets in this array because command arguments can be visible to operating-system process tools.
+Wayland capture uses the XDG Desktop Portal and a restricted PipeWire stream.
+When a configured browser first runs, the desktop asks which monitor to share.
+The permission and stream last only until Yellow Silence stops; no permission
+token is persisted. GNOME displays its normal screen-sharing indicator while
+the stream is active.
+
+Frames travel from PipeWire through GStreamer into the service as fixed-size
+RGBA pixels over an anonymous pipe. They are never encoded or written to disk.
+The service limits capture to five frames per second and rejects unsafe image
+dimensions before starting the frame receiver.
+
+If your desktop offers a different trusted capture command, `capture_command`
+still overrides the portal backend. Its first element must be an absolute path
+and it must emit PNG/JPEG bytes on standard output. Do not place secrets in this
+array because command arguments can be visible to operating-system process tools.
 
 If a manually launched command works but the service does not, import the graphical environment and restart:
 
 ```bash
-systemctl --user import-environment DISPLAY WAYLAND_DISPLAY XAUTHORITY XDG_CURRENT_DESKTOP
+systemctl --user import-environment DISPLAY WAYLAND_DISPLAY XAUTHORITY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE
 systemctl --user restart yellow-silence
 ```
 

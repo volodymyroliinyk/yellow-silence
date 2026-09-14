@@ -8,8 +8,10 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
+	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -19,7 +21,10 @@ const (
 	captureTimeout   = 5 * time.Second
 )
 
-type Capturer struct{ command []string }
+type Capturer struct {
+	command []string
+	portal  *portalCapturer
+}
 
 func New(custom []string) (*Capturer, error) {
 	if len(custom) > 0 {
@@ -31,19 +36,40 @@ func New(custom []string) (*Capturer, error) {
 			return nil, fmt.Errorf("capture command: %w", err)
 		}
 		command := append([]string{path}, custom[1:]...)
-		return &Capturer{command}, nil
+		return &Capturer{command: command}, nil
+	}
+	if isWaylandEnvironment() {
+		path, err := exec.LookPath("gst-launch-1.0")
+		if err != nil {
+			return nil, fmt.Errorf("Wayland capture requires gst-launch-1.0 and the GStreamer PipeWire and PNG plugins")
+		}
+		return &Capturer{portal: newPortalCapturer(path)}, nil
 	}
 	candidates := [][]string{{"grim", "-"}, {"maim"}, {"scrot", "-"}}
 	for _, c := range candidates {
 		if path, err := exec.LookPath(c[0]); err == nil {
 			command := append([]string{path}, c[1:]...)
-			return &Capturer{command}, nil
+			return &Capturer{command: command}, nil
 		}
 	}
-	return nil, fmt.Errorf("no screenshot tool found; install grim (Wayland), maim, or scrot (X11)")
+	return nil, fmt.Errorf("no X11 screenshot tool found; install maim or scrot")
+}
+
+func isWaylandEnvironment() bool {
+	sessionType := os.Getenv("XDG_SESSION_TYPE")
+	if sessionType != "" {
+		return strings.EqualFold(sessionType, "wayland")
+	}
+	if os.Getenv("WAYLAND_DISPLAY") != "" {
+		return true
+	}
+	return false
 }
 
 func (c *Capturer) Capture(ctx context.Context) (image.Image, error) {
+	if c.portal != nil {
+		return c.portal.Capture(ctx)
+	}
 	commandCtx, cancel := context.WithTimeout(ctx, captureTimeout)
 	defer cancel()
 	cmd := exec.CommandContext(commandCtx, c.command[0], c.command[1:]...)
@@ -109,7 +135,19 @@ func Release(img image.Image) {
 	}
 }
 
-func (c *Capturer) Name() string { return c.command[0] }
+func (c *Capturer) Name() string {
+	if c.portal != nil {
+		return "xdg-desktop-portal/pipewire"
+	}
+	return c.command[0]
+}
+
+func (c *Capturer) Close() error {
+	if c.portal != nil {
+		return c.portal.Close()
+	}
+	return nil
+}
 
 type limitedBuffer struct {
 	bytes.Buffer

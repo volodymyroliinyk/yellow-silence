@@ -1,6 +1,6 @@
 [Unit]
 Description=Yellow bar audio monitor
-Documentation=https://github.com/volodymyr/yellow-silence
+Documentation=https://github.com/volodymyroliinyk/yellow-silence
 PartOf=graphical-session.target
 After=graphical-session.target pipewire.service wireplumber.service
 

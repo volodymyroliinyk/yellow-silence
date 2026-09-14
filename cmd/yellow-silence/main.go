@@ -8,8 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/volodymyr/yellow-silence/internal/app"
-	"github.com/volodymyr/yellow-silence/internal/config"
+	"github.com/volodymyroliinyk/yellow-silence/internal/app"
+	"github.com/volodymyroliinyk/yellow-silence/internal/config"
 )
 
 var version = "0.1.0"

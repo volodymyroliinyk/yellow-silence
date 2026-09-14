@@ -8,23 +8,27 @@ The service never unmutes audio that was already muted before detection.
 
 ## Requirements
 
-- Go 1.22+ to build.
+- [Go 1.27.1+](https://go.dev/dl/) to build.
 - Ubuntu or another Linux distribution with systemd user services.
 - PipeWire/WirePlumber (`wpctl`) or PulseAudio (`pactl`).
-- A screenshot tool: `grim` on Wayland, or `maim`/`scrot` on X11.
+- XDG Desktop Portal, PipeWire, and GStreamer with its PipeWire plugin on Wayland.
+- `maim` or `scrot` when using the legacy X11 fallback.
 - `dpkg-deb` and `gzip` when building a Debian package.
 
 Ubuntu X11 example:
 
 ```bash
-sudo apt install golang-go pulseaudio-utils maim
+sudo apt install pulseaudio-utils maim
 ```
 
 Ubuntu Wayland example:
 
 ```bash
-sudo apt install golang-go wireplumber grim
+sudo apt install wireplumber xdg-desktop-portal-gnome gstreamer1.0-tools gstreamer1.0-pipewire
 ```
+
+On Wayland, the desktop presents a monitor-sharing dialog the first time the
+service needs a frame. The permission lasts until the service stops.
 
 Desktop security policies may require permission for screen capture. See [User guide](docs/USER.md).
 

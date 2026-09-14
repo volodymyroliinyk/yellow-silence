@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/volodymyr/yellow-silence/internal/config"
+	"github.com/volodymyroliinyk/yellow-silence/internal/config"
 )
 
 type fakeAudio struct {

@@ -1,7 +1,7 @@
 package detect
 
 import (
-	"github.com/volodymyr/yellow-silence/internal/config"
+	"github.com/volodymyroliinyk/yellow-silence/internal/config"
 	"image"
 	"image/color"
 	"testing"
@@ -17,6 +17,27 @@ func TestFindHorizontalBar(t *testing.T) {
 	m, ok := FindHorizontalBar(img, config.RGB{R: 255, G: 215, B: 0}, 10, 100, 2)
 	if !ok || m.Length < 100 || m.Thickness < 2 {
 		t.Fatalf("match=%+v ok=%v", m, ok)
+	}
+}
+
+func TestRGBAFastPathMatchesGenericPath(t *testing.T) {
+	rgba := image.NewRGBA(image.Rect(7, 9, 207, 39))
+	for y := 19; y < 22; y++ {
+		for x := 27; x < 148; x++ {
+			rgba.SetRGBA(x, y, color.RGBA{255, 204, 0, 255})
+		}
+	}
+	nrgba := image.NewNRGBA(rgba.Bounds())
+	for y := rgba.Bounds().Min.Y; y < rgba.Bounds().Max.Y; y++ {
+		for x := rgba.Bounds().Min.X; x < rgba.Bounds().Max.X; x++ {
+			nrgba.Set(x, y, rgba.At(x, y))
+		}
+	}
+	target := config.RGB{R: 255, G: 204, B: 0}
+	fastMatch, fastOK := FindHorizontalBar(rgba, target, 24, 100, 2)
+	genericMatch, genericOK := FindHorizontalBar(nrgba, target, 24, 100, 2)
+	if fastOK != genericOK || fastMatch != genericMatch {
+		t.Fatalf("fast=(%+v,%v), generic=(%+v,%v)", fastMatch, fastOK, genericMatch, genericOK)
 	}
 }
 

@@ -1,7 +1,7 @@
 package detect
 
 import (
-	"github.com/volodymyr/yellow-silence/internal/config"
+	"github.com/volodymyroliinyk/yellow-silence/internal/config"
 	"image"
 )
 
@@ -11,6 +11,9 @@ func FindHorizontalBar(img image.Image, target config.RGB, tolerance uint8, minL
 	b := img.Bounds()
 	if minLength < 1 || minThickness < 1 || b.Dx() < minLength || b.Dy() < minThickness {
 		return Match{}, false
+	}
+	if rgba, ok := img.(*image.RGBA); ok {
+		return findHorizontalBarRGBA(rgba, target, tolerance, minLength, minThickness)
 	}
 	prev := make([]int, b.Dx())
 	for y := b.Min.Y; y < b.Max.Y; y++ {
@@ -29,6 +32,33 @@ func FindHorizontalBar(img image.Image, target config.RGB, tolerance uint8, minL
 			}
 			if run >= minLength && prev[i] >= minThickness {
 				return Match{X: x - run + 1, Y: y - prev[i] + 1, Length: run, Thickness: prev[i]}, true
+			}
+		}
+	}
+	return Match{}, false
+}
+
+func findHorizontalBarRGBA(img *image.RGBA, target config.RGB, tolerance uint8, minLength, minThickness int) (Match, bool) {
+	b := img.Bounds()
+	prev := make([]int, b.Dx())
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		run := 0
+		row := img.Pix[(y-b.Min.Y)*img.Stride:]
+		for x := 0; x < b.Dx(); x++ {
+			i := x * 4
+			if row[i+3] >= 0x80 && delta(row[i], target.R) <= tolerance &&
+				delta(row[i+1], target.G) <= tolerance && delta(row[i+2], target.B) <= tolerance {
+				run++
+			} else {
+				run = 0
+			}
+			if run >= minLength {
+				prev[x]++
+			} else {
+				prev[x] = 0
+			}
+			if run >= minLength && prev[x] >= minThickness {
+				return Match{X: b.Min.X + x - run + 1, Y: y - prev[x] + 1, Length: run, Thickness: prev[x]}, true
 			}
 		}
 	}
