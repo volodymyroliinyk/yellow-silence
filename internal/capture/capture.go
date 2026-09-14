@@ -26,7 +26,7 @@ type Capturer struct {
 	portal  *portalCapturer
 }
 
-func New(custom []string) (*Capturer, error) {
+func New(custom []string, frameRate int) (*Capturer, error) {
 	if len(custom) > 0 {
 		if !filepath.IsAbs(custom[0]) {
 			return nil, fmt.Errorf("custom capture command must use an absolute executable path")
@@ -43,7 +43,7 @@ func New(custom []string) (*Capturer, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Wayland capture requires gst-launch-1.0 and the GStreamer PipeWire and PNG plugins")
 		}
-		return &Capturer{portal: newPortalCapturer(path)}, nil
+		return &Capturer{portal: newPortalCapturer(path, frameRate)}, nil
 	}
 	candidates := [][]string{{"grim", "-"}, {"maim"}, {"scrot", "-"}}
 	for _, c := range candidates {

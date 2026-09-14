@@ -36,16 +36,18 @@ func (c RGB) MarshalJSON() ([]byte, error) {
 }
 
 type Config struct {
-	Browsers           []string `json:"browsers"`
-	Color              RGB      `json:"color"`
-	ColorTolerance     uint8    `json:"color_tolerance"`
-	MinimumLengthPX    int      `json:"minimum_length_px"`
-	MinimumThicknessPX int      `json:"minimum_thickness_px"`
-	PollInterval       Duration `json:"poll_interval"`
-	RestoreWithin      Duration `json:"restore_within"`
-	CaptureCommand     []string `json:"capture_command,omitempty"`
-	AudioBackend       string   `json:"audio_backend"`
-	LogLevel           string   `json:"log_level"`
+	Browsers                        []string `json:"browsers"`
+	Color                           RGB      `json:"color"`
+	ColorTolerance                  uint8    `json:"color_tolerance"`
+	MinimumLengthPX                 int      `json:"minimum_length_px"`
+	MinimumThicknessPX              int      `json:"minimum_thickness_px"`
+	PollInterval                    Duration `json:"poll_interval"`
+	CaptureFrameRate                int      `json:"capture_frame_rate"`
+	DisappearanceConfirmationFrames int      `json:"disappearance_confirmation_frames"`
+	RestoreWithin                   Duration `json:"restore_within"`
+	CaptureCommand                  []string `json:"capture_command,omitempty"`
+	AudioBackend                    string   `json:"audio_backend"`
+	LogLevel                        string   `json:"log_level"`
 }
 
 type Duration struct{ time.Duration }
@@ -64,8 +66,9 @@ func (d Duration) MarshalJSON() ([]byte, error) { return json.Marshal(d.String()
 func Defaults() Config {
 	return Config{
 		Browsers: []string{"firefox", "google-chrome", "chromium", "brave-browser"},
-		Color:    RGB{255, 204, 0}, ColorTolerance: 24, MinimumLengthPX: 100, MinimumThicknessPX: 2,
-		PollInterval: Duration{150 * time.Millisecond}, RestoreWithin: Duration{5 * time.Minute},
+		Color:    RGB{255, 204, 0}, ColorTolerance: 24, MinimumLengthPX: 40, MinimumThicknessPX: 2,
+		PollInterval: Duration{100 * time.Millisecond}, CaptureFrameRate: 10,
+		DisappearanceConfirmationFrames: 3, RestoreWithin: Duration{5 * time.Minute},
 		AudioBackend: "auto", LogLevel: "info",
 	}
 }
@@ -139,6 +142,12 @@ func (c Config) Validate() error {
 	}
 	if c.PollInterval.Duration < 100*time.Millisecond {
 		return errors.New("poll_interval must be at least 100ms")
+	}
+	if c.CaptureFrameRate < 1 || c.CaptureFrameRate > 30 {
+		return errors.New("capture_frame_rate must be between 1 and 30")
+	}
+	if c.DisappearanceConfirmationFrames < 1 || c.DisappearanceConfirmationFrames > 30 {
+		return errors.New("disappearance_confirmation_frames must be between 1 and 30")
 	}
 	if c.RestoreWithin.Duration < 0 {
 		return errors.New("restore_within cannot be negative")

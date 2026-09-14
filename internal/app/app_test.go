@@ -71,7 +71,7 @@ func TestRestoreRespectsDeadline(t *testing.T) {
 func TestFailedRestoreRetainsOwnershipForRetry(t *testing.T) {
 	audio := &fakeAudio{setErr: errors.New("audio unavailable")}
 	a := &App{
-		cfg:       config.Config{RestoreWithin: config.Duration{Duration: 5 * time.Minute}},
+		cfg:       config.Config{RestoreWithin: config.Duration{Duration: 5 * time.Minute}, DisappearanceConfirmationFrames: 3},
 		log:       testLogger(),
 		audio:     audio,
 		mutedByUs: true,
@@ -94,9 +94,9 @@ func TestTransientMissingFramesDoNotRestoreAudio(t *testing.T) {
 		mutedByUs: true,
 		mutedAt:   time.Now(),
 	}
-	for frame := 1; frame <= disappearanceConfirmationFrames; frame++ {
+	for frame := 1; frame <= a.cfg.DisappearanceConfirmationFrames; frame++ {
 		confirmed := a.disappearanceConfirmed()
-		if confirmed != (frame == disappearanceConfirmationFrames) {
+		if confirmed != (frame == a.cfg.DisappearanceConfirmationFrames) {
 			t.Fatalf("frame %d: confirmed=%v", frame, confirmed)
 		}
 	}

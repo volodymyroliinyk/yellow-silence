@@ -23,13 +23,11 @@ type App struct {
 	missingFrames int
 }
 
-const disappearanceConfirmationFrames = 3
-
 func New(cfg config.Config, log *slog.Logger) *App { return &App{cfg: cfg, log: log} }
 
 func (a *App) Run(ctx context.Context) error {
 	var err error
-	a.capture, err = capture.New(a.cfg.CaptureCommand)
+	a.capture, err = capture.New(a.cfg.CaptureCommand, a.cfg.CaptureFrameRate)
 	if err != nil {
 		return err
 	}
@@ -38,7 +36,13 @@ func (a *App) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	a.log.Info("service started", "capture_backend", a.capture.Name(), "audio_backend", a.audio.Name(), "poll_interval", a.cfg.PollInterval.String())
+	a.log.Info("service started",
+		"capture_backend", a.capture.Name(),
+		"audio_backend", a.audio.Name(),
+		"poll_interval", a.cfg.PollInterval.String(),
+		"capture_frame_rate", a.cfg.CaptureFrameRate,
+		"disappearance_confirmation_frames", a.cfg.DisappearanceConfirmationFrames,
+	)
 	defer func() { a.log.Info("service stopped") }()
 	if err := a.tick(ctx); err != nil {
 		a.log.Warn("monitor cycle failed", "error", err)
@@ -103,7 +107,7 @@ func (a *App) disappearanceConfirmed() bool {
 		return true
 	}
 	a.missingFrames++
-	return a.missingFrames >= disappearanceConfirmationFrames
+	return a.missingFrames >= a.cfg.DisappearanceConfirmationFrames
 }
 
 func (a *App) restoreIfAllowed(ctx context.Context, disappeared bool) error {

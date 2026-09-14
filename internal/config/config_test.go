@@ -15,7 +15,7 @@ func TestRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.MinimumLengthPX != 100 || c.PollInterval.String() != "150ms" || c.RestoreWithin.String() != "5m0s" || c.Color != (RGB{R: 255, G: 204, B: 0}) {
+	if c.MinimumLengthPX != 40 || c.PollInterval.String() != "100ms" || c.CaptureFrameRate != 10 || c.DisappearanceConfirmationFrames != 3 || c.RestoreWithin.String() != "5m0s" || c.Color != (RGB{R: 255, G: 204, B: 0}) {
 		t.Fatalf("unexpected config: %+v", c)
 	}
 }
@@ -39,6 +39,10 @@ func TestLoadRejectsUnsafeFilesAndContent(t *testing.T) {
 		{name: "group writable", content: `{}`, mode: 0620},
 		{name: "relative capture command", content: `{"capture_command":["helper"]}`, mode: 0600},
 		{name: "excessive color tolerance", content: `{"color_tolerance":65}`, mode: 0600},
+		{name: "zero capture frame rate", content: `{"capture_frame_rate":0}`, mode: 0600},
+		{name: "excessive capture frame rate", content: `{"capture_frame_rate":31}`, mode: 0600},
+		{name: "zero disappearance confirmation", content: `{"disappearance_confirmation_frames":0}`, mode: 0600},
+		{name: "excessive disappearance confirmation", content: `{"disappearance_confirmation_frames":31}`, mode: 0600},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {

@@ -84,7 +84,7 @@ func TestSafeDimensions(t *testing.T) {
 }
 
 func TestNewRejectsRelativeCustomCommand(t *testing.T) {
-	if _, err := New([]string{"capture-helper"}); err == nil {
+	if _, err := New([]string{"capture-helper"}, 10); err == nil {
 		t.Fatal("expected relative custom command to be rejected")
 	}
 }

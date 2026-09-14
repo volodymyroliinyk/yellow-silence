@@ -22,11 +22,11 @@ const (
 	requestResponse = "org.freedesktop.portal.Request.Response"
 	requestClose    = "org.freedesktop.portal.Request.Close"
 	sessionClose    = "org.freedesktop.portal.Session.Close"
-	portalFrameRate = 7
 )
 
 type portalCapturer struct {
-	gstPath string
+	gstPath   string
+	frameRate int
 
 	mu          sync.Mutex
 	initialized bool
@@ -41,8 +41,8 @@ type portalCapturer struct {
 	frameBytes  int
 }
 
-func newPortalCapturer(gstPath string) *portalCapturer {
-	return &portalCapturer{gstPath: gstPath}
+func newPortalCapturer(gstPath string, frameRate int) *portalCapturer {
+	return &portalCapturer{gstPath: gstPath, frameRate: frameRate}
 }
 
 func (p *portalCapturer) Capture(ctx context.Context) (image.Image, error) {
@@ -167,8 +167,8 @@ func (p *portalCapturer) initialize(ctx context.Context) error {
 
 	args := []string{
 		"-q", "pipewiresrc", "fd=3", "path=" + strconv.FormatUint(uint64(stream.nodeID), 10),
-		"do-timestamp=true", "!", "videorate", "drop-only=true", "max-rate=" + strconv.Itoa(portalFrameRate), "!",
-		"videoconvert", "!", fmt.Sprintf("video/x-raw,format=RGBA,width=%d,height=%d,framerate=%d/1", stream.width, stream.height, portalFrameRate), "!",
+		"do-timestamp=true", "!", "videorate", "drop-only=true", "max-rate=" + strconv.Itoa(p.frameRate), "!",
+		"videoconvert", "!", fmt.Sprintf("video/x-raw,format=RGBA,width=%d,height=%d,framerate=%d/1", stream.width, stream.height, p.frameRate), "!",
 		"fdsink", "fd=1", "sync=false",
 	}
 	cmd := exec.CommandContext(ctx, p.gstPath, args...)

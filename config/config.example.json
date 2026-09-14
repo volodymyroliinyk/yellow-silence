@@ -7,9 +7,11 @@
   ],
   "color": "#FFCC00",
   "color_tolerance": 24,
-  "minimum_length_px": 100,
+  "minimum_length_px": 40,
   "minimum_thickness_px": 2,
-  "poll_interval": "150ms",
+  "poll_interval": "100ms",
+  "capture_frame_rate": 10,
+  "disappearance_confirmation_frames": 3,
   "restore_within": "5m",
   "audio_backend": "auto",
   "log_level": "info"
