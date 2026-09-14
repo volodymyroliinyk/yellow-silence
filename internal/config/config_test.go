@@ -15,7 +15,7 @@ func TestRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.MinimumLengthPX != 100 || c.PollInterval.String() != "200ms" || c.RestoreWithin.String() != "5m0s" || c.Color != (RGB{R: 255, G: 204, B: 0}) {
+	if c.MinimumLengthPX != 100 || c.PollInterval.String() != "150ms" || c.RestoreWithin.String() != "5m0s" || c.Color != (RGB{R: 255, G: 204, B: 0}) {
 		t.Fatalf("unexpected config: %+v", c)
 	}
 }

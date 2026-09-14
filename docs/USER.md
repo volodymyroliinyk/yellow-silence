@@ -59,7 +59,7 @@ The default path is `$XDG_CONFIG_HOME/yellow-silence/config.json` or `~/.config/
 | `color_tolerance` | Maximum difference in each RGB channel, 0–64. | `24` |
 | `minimum_length_px` | Minimum horizontal length. | `100` |
 | `minimum_thickness_px` | Minimum consecutive rows. | `2` |
-| `poll_interval` | Delay between consecutive screen checks while a browser is running. Go duration, at least `100ms`. | `200ms` |
+| `poll_interval` | Delay between consecutive screen checks while a browser is running. Go duration, at least `100ms`. | `150ms` |
 | `restore_within` | Maximum time during which automatic unmute is allowed. | `5m` |
 | `audio_backend` | `auto`, `wpctl`, or `pactl`. | `auto` |
 | `log_level` | `debug`, `info`, `warn`, or `error`. | `info` |
@@ -90,7 +90,7 @@ the stream is active.
 
 Frames travel from PipeWire through GStreamer into the service as fixed-size
 RGBA pixels over an anonymous pipe. They are never encoded or written to disk.
-The service limits capture to five frames per second and rejects unsafe image
+The service limits capture to seven frames per second and rejects unsafe image
 dimensions before starting the frame receiver.
 
 If your desktop offers a different trusted capture command, `capture_command`

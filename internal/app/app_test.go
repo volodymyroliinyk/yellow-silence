@@ -84,3 +84,29 @@ func TestFailedRestoreRetainsOwnershipForRetry(t *testing.T) {
 		t.Fatal("mute ownership was lost after failed restore")
 	}
 }
+
+func TestTransientMissingFramesDoNotRestoreAudio(t *testing.T) {
+	audio := &fakeAudio{}
+	a := &App{
+		cfg:       config.Config{RestoreWithin: config.Duration{Duration: 5 * time.Minute}},
+		log:       testLogger(),
+		audio:     audio,
+		mutedByUs: true,
+		mutedAt:   time.Now(),
+	}
+	for frame := 1; frame <= disappearanceConfirmationFrames; frame++ {
+		confirmed := a.disappearanceConfirmed()
+		if confirmed != (frame == disappearanceConfirmationFrames) {
+			t.Fatalf("frame %d: confirmed=%v", frame, confirmed)
+		}
+	}
+	if len(audio.setCalls) != 0 || !a.mutedByUs {
+		t.Fatalf("transient misses changed audio: calls=%v owned=%v", audio.setCalls, a.mutedByUs)
+	}
+	if err := a.restoreIfAllowed(context.Background(), true); err != nil {
+		t.Fatal(err)
+	}
+	if len(audio.setCalls) != 1 || audio.setCalls[0] || a.mutedByUs {
+		t.Fatalf("confirmed disappearance did not restore: calls=%v owned=%v", audio.setCalls, a.mutedByUs)
+	}
+}

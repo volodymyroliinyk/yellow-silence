@@ -14,13 +14,16 @@ import (
 )
 
 type App struct {
-	cfg       config.Config
-	log       *slog.Logger
-	audio     audio.Controller
-	capture   *capture.Capturer
-	mutedByUs bool
-	mutedAt   time.Time
+	cfg           config.Config
+	log           *slog.Logger
+	audio         audio.Controller
+	capture       *capture.Capturer
+	mutedByUs     bool
+	mutedAt       time.Time
+	missingFrames int
 }
+
+const disappearanceConfirmationFrames = 3
 
 func New(cfg config.Config, log *slog.Logger) *App { return &App{cfg: cfg, log: log} }
 
@@ -56,6 +59,7 @@ func (a *App) Run(ctx context.Context) error {
 func (a *App) tick(ctx context.Context) error {
 	if !proc.AnyRunning(a.cfg.Browsers) {
 		a.log.Debug("no configured browser is running")
+		a.missingFrames = 0
 		return a.restoreIfAllowed(ctx, false)
 	}
 	img, err := a.capture.Capture(ctx)
@@ -67,6 +71,7 @@ func (a *App) tick(ctx context.Context) error {
 		return detect.FindHorizontalBar(img, a.cfg.Color, a.cfg.ColorTolerance, a.cfg.MinimumLengthPX, a.cfg.MinimumThicknessPX)
 	}()
 	if found {
+		a.missingFrames = 0
 		a.log.Debug("target bar detected", "x", m.X, "y", m.Y, "length", m.Length, "thickness", m.Thickness)
 		if !a.mutedByUs {
 			muted, err := a.audio.Muted(ctx)
@@ -86,8 +91,21 @@ func (a *App) tick(ctx context.Context) error {
 		}
 		return nil
 	}
+	if !a.disappearanceConfirmed() {
+		a.log.Debug("target bar temporarily absent", "consecutive_frames", a.missingFrames)
+		return nil
+	}
 	return a.restoreIfAllowed(ctx, true)
 }
+
+func (a *App) disappearanceConfirmed() bool {
+	if !a.mutedByUs {
+		return true
+	}
+	a.missingFrames++
+	return a.missingFrames >= disappearanceConfirmationFrames
+}
+
 func (a *App) restoreIfAllowed(ctx context.Context, disappeared bool) error {
 	if !a.mutedByUs {
 		return nil
@@ -95,6 +113,7 @@ func (a *App) restoreIfAllowed(ctx context.Context, disappeared bool) error {
 	age := time.Since(a.mutedAt)
 	if age > a.cfg.RestoreWithin.Duration {
 		a.mutedByUs = false
+		a.missingFrames = 0
 		a.log.Warn("audio left muted", "reason", "restore window expired", "muted_for", age.String())
 		return nil
 	}
@@ -102,6 +121,7 @@ func (a *App) restoreIfAllowed(ctx context.Context, disappeared bool) error {
 		return fmt.Errorf("restore audio: %w", err)
 	}
 	a.mutedByUs = false
+	a.missingFrames = 0
 	a.log.Info("audio restored", "bar_disappeared", disappeared, "muted_for", age.String())
 	return nil
 }
