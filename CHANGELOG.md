@@ -4,6 +4,18 @@ Notable changes to this project are recorded in this file. Releases follow [Sema
 
 ## Unreleased
 
+## v0.1.0 - 2026-09-15
+
+- feat: expose detector timing settings
+- fix: debounce transient bar detection gaps
+- feat: add secure Wayland portal capture
+- build: add Debian package release artifacts
+- security: clear screenshot buffers after detection
+- security: harden service boundaries and resource limits
+- fix: monitor changing progress bar more frequently
+- chore: initialize yellow-silence project
+
+
 - Changed the default browser monitoring interval from 500 ms to 200 ms.
 - Added regression coverage for a progress bar that changes length between screen captures.
 - Limited screenshot and audio-command output, image dimensions, command duration, and configuration size.
